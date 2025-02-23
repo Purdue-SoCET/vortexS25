@@ -16,7 +16,9 @@
 module VX_alu_int #(
     parameter `STRING INSTANCE_ID = "",
     parameter BLOCK_IDX = 0,
-    parameter NUM_LANES = 1
+    parameter NUM_LANES = 1,
+    parameter NUM_THREADS = 4,
+    parameter NUM_WARPS = 4
 ) (
     input wire              clk,
     input wire              reset,
