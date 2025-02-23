@@ -28,8 +28,9 @@
 `endif
 
 module VX_decode import VX_gpu_pkg::*; #(
-    parameter `STRING INSTANCE_ID = ""
-) (
+    parameter `STRING INSTANCE_ID = "",
+    parameter NUM_THREADS = 4,
+    parameter NUM_WARPS = 4) (
     input wire              clk,
     input wire              reset,
 
