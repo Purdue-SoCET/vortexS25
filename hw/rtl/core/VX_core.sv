@@ -19,7 +19,9 @@
 
 module VX_core import VX_gpu_pkg::*; #(
     parameter CORE_ID = 0,
-    parameter `STRING INSTANCE_ID = ""
+    parameter `STRING INSTANCE_ID = "", 
+    parameter NUM_THREADS = 4, 
+    parameter NUM_WARPS = 4
 ) (
     `SCOPE_IO_DECL
 
@@ -137,7 +139,8 @@ module VX_core import VX_gpu_pkg::*; #(
     );
 
     VX_issue #(
-        .INSTANCE_ID (`SFORMATF(("%s-issue", INSTANCE_ID)))
+        .INSTANCE_ID (`SFORMATF(("%s-issue", INSTANCE_ID))), 
+        .NUM_THREADS(NUM_THREADS)
     ) issue (
         `SCOPE_IO_BIND  (1)
 

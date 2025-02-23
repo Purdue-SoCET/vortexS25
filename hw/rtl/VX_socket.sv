@@ -15,7 +15,9 @@
 
 module VX_socket import VX_gpu_pkg::*; #(
     parameter SOCKET_ID = 0,
-    parameter `STRING INSTANCE_ID = ""
+    parameter `STRING INSTANCE_ID = "", 
+    parameter NUM_THREADS = 4, 
+    parameter NUM_WARPS = 4 
 ) (
     `SCOPE_IO_DECL
 
@@ -229,7 +231,9 @@ module VX_socket import VX_gpu_pkg::*; #(
 
         VX_core #(
             .CORE_ID  ((SOCKET_ID * `SOCKET_SIZE) + core_id),
-            .INSTANCE_ID (`SFORMATF(("%s-core%0d", INSTANCE_ID, core_id)))
+            .INSTANCE_ID (`SFORMATF(("%s-core%0d", INSTANCE_ID, core_id))), 
+            .NUM_THREADS(NUM_THREADS), 
+            .NUM_WARPS(NUM_WARPS)
         ) core (
             `SCOPE_IO_BIND  (scope_core + core_id)
 

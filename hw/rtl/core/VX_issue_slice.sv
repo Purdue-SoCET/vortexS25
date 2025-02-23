@@ -15,7 +15,8 @@
 
 module VX_issue_slice import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
-    parameter ISSUE_ID = 0
+    parameter ISSUE_ID = 0,
+    parameter NUM_THREADS = 4
 ) (
     `SCOPE_IO_DECL
 
@@ -49,7 +50,8 @@ module VX_issue_slice import VX_gpu_pkg::*; #(
     );
 
     VX_scoreboard #(
-        .INSTANCE_ID (`SFORMATF(("%s-scoreboard", INSTANCE_ID)))
+        .INSTANCE_ID (`SFORMATF(("%s-scoreboard", INSTANCE_ID))),
+        .NUM_THREADS(NUM_THREADS)
     ) scoreboard (
         .clk            (clk),
         .reset          (reset),
@@ -64,7 +66,8 @@ module VX_issue_slice import VX_gpu_pkg::*; #(
     );
 
     VX_operands #(
-        .INSTANCE_ID (`SFORMATF(("%s-operands", INSTANCE_ID)))
+        .INSTANCE_ID (`SFORMATF(("%s-operands", INSTANCE_ID))), 
+        .NUM_THREADS(NUM_THREADS)
     ) operands (
         .clk            (clk),
         .reset          (reset),
@@ -77,8 +80,9 @@ module VX_issue_slice import VX_gpu_pkg::*; #(
     );
 
     VX_dispatch #(
-        .INSTANCE_ID (`SFORMATF(("%s-dispatch", INSTANCE_ID)), .NUM_THREADS(NUM_THREADS), ///CHANGED -- ARMAAN 
-    .NUM_WARPS(NUM_WARPS) 
+        .INSTANCE_ID (`SFORMATF(("%s-dispatch", INSTANCE_ID)), 
+        .NUM_THREADS(NUM_THREADS), ///CHANGED -- ARMAAN 
+        .NUM_WARPS(NUM_WARPS))
     ) dispatch (
         .clk            (clk),
         .reset          (reset),
