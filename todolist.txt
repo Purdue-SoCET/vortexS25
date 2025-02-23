@@ -8,7 +8,7 @@ Armaan: (Sudo apt not working on kanchan account, as using Red Hat Enterprise Li
 VX_alu_int.sv
 VX_alu_muldiv.sv
 VX_alu_unit.sv
-VX_commit.sv
+VX_commit.sv -- check lsu slice fiile 
 VX_csr_data.sv
 VX_csr_unit.sv
 VX_decode.sv
