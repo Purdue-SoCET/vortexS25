@@ -59,8 +59,10 @@ module VX_sfu_unit import VX_gpu_pkg::*; #(
     VX_dispatch_unit #(
         .BLOCK_SIZE (BLOCK_SIZE),
         .NUM_LANES  (NUM_LANES),
-        .OUT_BUF    (3)
-    ) dispatch_unit (
+        .OUT_BUF    (3),
+        .NUM_THREADS(NUM_THREADS), 
+    .NUM_WARPS(NUM_WARPS)     ) 
+    dispatch_unit (
         .clk        (clk),
         .reset      (reset),
         .dispatch_if(dispatch_if),
@@ -137,8 +139,10 @@ module VX_sfu_unit import VX_gpu_pkg::*; #(
     VX_gather_unit #(
         .BLOCK_SIZE (BLOCK_SIZE),
         .NUM_LANES  (NUM_LANES),
-        .OUT_BUF    (3)
-    ) gather_unit (
+        .OUT_BUF    (3),
+        .NUM_THREADS(NUM_THREADS), // Add NUM_THREADS parameter
+    .NUM_WARPS(NUM_WARPS)  ) 
+    gather_unit (
         .clk        (clk),
         .reset      (reset),
         .commit_in_if (per_block_commit_if),
