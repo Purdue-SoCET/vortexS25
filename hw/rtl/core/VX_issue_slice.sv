@@ -77,7 +77,8 @@ module VX_issue_slice import VX_gpu_pkg::*; #(
     );
 
     VX_dispatch #(
-        .INSTANCE_ID (`SFORMATF(("%s-dispatch", INSTANCE_ID)))
+        .INSTANCE_ID (`SFORMATF(("%s-dispatch", INSTANCE_ID)), .NUM_THREADS(NUM_THREADS), ///CHANGED -- ARMAAN 
+    .NUM_WARPS(NUM_WARPS) 
     ) dispatch (
         .clk            (clk),
         .reset          (reset),
