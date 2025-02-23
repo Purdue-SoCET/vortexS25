@@ -15,8 +15,9 @@
 
 module VX_execute import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
-    parameter CORE_ID = 0
-) (
+    parameter CORE_ID = 0,
+    parameter NUM_THREADS = 4,
+    parameter NUM_WARPS = 4) (
     `SCOPE_IO_DECL
 
     input wire              clk,
