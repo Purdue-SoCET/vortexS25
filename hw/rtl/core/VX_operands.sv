@@ -23,8 +23,9 @@
 module VX_operands import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
     parameter NUM_BANKS = 4,
-    parameter OUT_BUF   = 3
-) (
+    parameter OUT_BUF   = 3,
+    parameter NUM_THREADS = 4,
+    parameter NUM_WARPS = 4) (
     input wire              clk,
     input wire              reset,
 
