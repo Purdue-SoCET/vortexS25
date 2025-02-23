@@ -14,8 +14,8 @@
 `include "VX_define.vh"
 
 module VX_lsu_slice import VX_gpu_pkg::*; #(
-    parameter `STRING INSTANCE_ID = ""
-) (
+    parameter `STRING INSTANCE_ID = "",
+       parameter NUM_THREADS = 4) (
     `SCOPE_IO_DECL
 
     input wire              clk,
