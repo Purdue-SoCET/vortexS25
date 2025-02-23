@@ -1,0 +1,32 @@
+Github link :  https://github.com/Purdue-SoCET/vortex-f24
+
+
+Param NUM_THREADS are in the files:
+
+Armaan: (Sudo apt not working on kanchan account, as using Red Hat Enterprise Linux (RHEL) 8.10 -> Fedora, working with yum,-> )
+
+VX_alu_int.sv
+VX_alu_muldiv.sv
+VX_alu_unit.sv
+VX_commit.sv
+VX_csr_data.sv
+VX_csr_unit.sv
+VX_decode.sv
+VX_dispatch_unit.sv
+VX_dispatch.sv
+VX_fetch.sv
+VX_fpu_unit.sv
+VX_gather_unit.sv
+
+Zohaib: //done but need to ask abhiram to test it 
+VX_gpr_slice.sv //done done 
+VX_ibuffer.sv  //done done 
+VX_issue_slice.sv //done done 
+VX_issue_top.sv //done done 
+VX_lsu_slice.sv //done done 
+VX_operands.sv //done done 
+VX_schedule.sv //done 
+VX_scoreboard.sv //done 
+VX_sfu_unit.sv //done 
+VX_split_join.sv //done 
+VX_wctl_unit.sv //done 
