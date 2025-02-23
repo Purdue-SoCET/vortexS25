@@ -1,4 +1,7 @@
 Github link :  https://github.com/Purdue-SoCET/vortex-f24
+NEXT TASKS :
+UPDATE MEMORY SUBSYSTEM 
+UPDATE MEMORY SUBSYSTEM 
 
 
 Param NUM_THREADS are in the files:
