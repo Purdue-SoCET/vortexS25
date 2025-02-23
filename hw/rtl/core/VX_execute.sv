@@ -52,7 +52,7 @@ module VX_execute import VX_gpu_pkg::*; #(
 `endif
 
     VX_alu_unit #(
-        .INSTANCE_ID (`SFORMATF(("%s-alu", INSTANCE_ID)))
+        .INSTANCE_ID (`SFORMATF(("%s-alu", INSTANCE_ID)), .NUM_THREADS(NUM_THREADS), .NUM_WARPS(NUM_WARPS))
     ) alu_unit (
         .clk            (clk),
         .reset          (reset),
@@ -88,7 +88,7 @@ module VX_execute import VX_gpu_pkg::*; #(
 
     VX_sfu_unit #(
         .INSTANCE_ID (`SFORMATF(("%s-sfu", INSTANCE_ID))),
-        .CORE_ID (CORE_ID)
+        .CORE_ID (CORE_ID), .NUM_THREADS(NUM_THREADS), .NUM_WARPS(NUM_WARPS)
     ) sfu_unit (
         .clk            (clk),
         .reset          (reset),
