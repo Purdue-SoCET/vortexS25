@@ -16,8 +16,9 @@
 module VX_csr_unit import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
     parameter CORE_ID = 0,
-    parameter NUM_LANES = 1
-) (
+    parameter NUM_LANES = 1, 
+    parameter NUM_THREADS = 4,
+    parameter NUM_WARPS = 4) (
     input wire                  clk,
     input wire                  reset,
 
