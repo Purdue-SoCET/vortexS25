@@ -13,17 +13,11 @@
 
 `include "VX_define.vh"
 
-// reset all GPRs in debug mode
-`ifdef SIMULATION
-`ifndef NDEBUG
-`define GPR_RESET
-`endif
-`endif
-
 module VX_operands import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
     parameter NUM_BANKS = 4,
-    parameter OUT_BUF   = 3
+    parameter OUT_BUF   = 3,
+    parameter THREADS_PER_WARP = 32  // Match dtt parameter if needed
 ) (
     input wire              clk,
     input wire              reset,
@@ -34,15 +28,29 @@ module VX_operands import VX_gpu_pkg::*; #(
 
     VX_writeback_if.slave   writeback_if,
     VX_scoreboard_if.slave  scoreboard_if,
-    VX_operands_if.master   operands_if
+    VX_operands_if.master   operands_if,
+
+    // Inputs from DTT for thread transfer
+    input wire              scalar_dispatch,
+    input wire [4:0]        scalar_warp_id,
+    input wire [THREADS_PER_WARP-1:0] scalar_thread_mask,
+
+    // Outputs to scalar core
+    output wire             transfer_out_valid,
+    output wire [`CLOG2(THREADS_PER_WARP)-1:0] transfer_out_thread_id,
+    output wire [`NR_BITS-1:0] transfer_out_register_id,
+    output wire [`XLEN-1:0] transfer_out_value,
+    output wire             transfer_complete
 );
     `UNUSED_SPARAM (INSTANCE_ID)
     localparam NUM_SRC_OPDS = 3;
-    localparam REQ_SEL_BITS = `CLOG2(NUM_SRC_OPDS);
+    localparam TOTAL_INPUTS = NUM_SRC_OPDS + NUM_BANKS; // Add banks for transfer requests
+    localparam REQ_SEL_BITS = `CLOG2(TOTAL_INPUTS);     // Updated for total inputs
     localparam REQ_SEL_WIDTH = `UP(REQ_SEL_BITS);
     localparam BANK_SEL_BITS = `CLOG2(NUM_BANKS);
     localparam BANK_SEL_WIDTH = `UP(BANK_SEL_BITS);
     localparam PER_BANK_REGS = `NUM_REGS / NUM_BANKS;
+    localparam REG_PER_BANK = PER_BANK_REGS;            // Alias for clarity
     localparam META_DATAW = ISSUE_WIS_W + `NUM_THREADS + `PC_BITS + 1 + `EX_BITS + `INST_OP_BITS + `INST_ARGS_BITS + `NR_BITS + `UUID_WIDTH;
     localparam REGS_DATAW = `XLEN * `NUM_THREADS;
     localparam DATAW = META_DATAW + NUM_SRC_OPDS * REGS_DATAW;
@@ -79,6 +87,7 @@ module VX_operands import VX_gpu_pkg::*; #(
     wire [NUM_SRC_OPDS-1:0][`NR_BITS-1:0] src_opds;
     assign src_opds = {scoreboard_if.data.rs3, scoreboard_if.data.rs2, scoreboard_if.data.rs1};
 
+    // Normal operand request generation
     for (genvar i = 0; i < NUM_SRC_OPDS; ++i) begin : g_req_data_in
         if (ISSUE_WIS != 0) begin : g_wis
             assign req_data_in[i] = {src_opds[i][`NR_BITS-1:BANK_SEL_BITS], scoreboard_if.data.wis};
@@ -101,20 +110,43 @@ module VX_operands import VX_gpu_pkg::*; #(
 
     assign req_valid_in = {NUM_SRC_OPDS{scoreboard_if.valid}} & src_valid;
 
+    // Transfer request generation
+    reg transfer_active;
+    reg [4:0] transfer_warp_id;
+    reg [THREADS_PER_WARP-1:0] transfer_thread_mask;
+    reg [BANK_SEL_WIDTH-1:0] transfer_bank_counters [NUM_BANKS-1:0];
+
+    wire [NUM_BANKS-1:0] transfer_valid_in;
+    wire [NUM_BANKS-1:0][PER_BANK_ADDRW-1:0] transfer_data_in;
+    wire [NUM_BANKS-1:0][BANK_SEL_WIDTH-1:0] transfer_sel_in;
+
+    for (genvar b = 0; b < NUM_BANKS; ++b) begin : gen_transfer_requests
+        wire [`NR_BITS-1:0] reg_num = b + (transfer_bank_counters[b] * NUM_BANKS);
+        assign transfer_valid_in[b] = transfer_active && (transfer_bank_counters[b] < REG_PER_BANK) && (reg_num < `NUM_REGS);
+        assign transfer_data_in[b] = {reg_num[`NR_BITS-1:BANK_SEL_BITS], transfer_warp_id};
+        assign transfer_sel_in[b] = b[BANK_SEL_BITS-1:0];
+    end
+
+    // Combined request crossbar
+    wire [TOTAL_INPUTS-1:0] req_valid_all = {transfer_valid_in, req_valid_in};
+    wire [TOTAL_INPUTS-1:0][PER_BANK_ADDRW-1:0] req_data_all = {transfer_data_in, req_data_in};
+    wire [TOTAL_INPUTS-1:0][BANK_SEL_WIDTH-1:0] req_sel_all = {transfer_sel_in, req_bank_idx};
+    wire [TOTAL_INPUTS-1:0] req_ready_all;
+
     VX_stream_xbar #(
-        .NUM_INPUTS  (NUM_SRC_OPDS),
+        .NUM_INPUTS  (TOTAL_INPUTS),
         .NUM_OUTPUTS (NUM_BANKS),
         .DATAW       (PER_BANK_ADDRW),
-        .ARBITER     ("P"), // use priority arbiter
-        .OUT_BUF     (0) // no output buffering
+        .ARBITER     ("P"),
+        .OUT_BUF     (0)
     ) req_xbar (
         .clk       (clk),
         .reset     (reset),
         `UNUSED_PIN(collisions),
-        .valid_in  (req_valid_in),
-        .data_in   (req_data_in),
-        .sel_in    (req_bank_idx),
-        .ready_in  (req_ready_in),
+        .valid_in  (req_valid_all),
+        .data_in   (req_data_all),
+        .sel_in    (req_sel_all),
+        .ready_in  (req_ready_all),
         .valid_out (gpr_rd_valid),
         .data_out  (gpr_rd_addr),
         .sel_out   (gpr_rd_req_idx),
@@ -123,6 +155,7 @@ module VX_operands import VX_gpu_pkg::*; #(
 
     assign gpr_rd_ready = {NUM_BANKS{pipe_ready_in}};
 
+    // Collision detection for normal requests
     always @(*) begin
         has_collision_n = 0;
         for (integer i = 0; i < NUM_SRC_OPDS; ++i) begin
@@ -189,10 +222,134 @@ module VX_operands import VX_gpu_pkg::*; #(
         .ready_out(pipe_ready_st2)
     );
 
+    // Transfer request tracking
+    wire [NUM_BANKS-1:0] transfer_granted;
+    for (genvar b = 0; b < NUM_BANKS; ++b) begin
+        assign transfer_granted[b] = gpr_rd_valid[b] && (gpr_rd_req_idx[b] >= NUM_SRC_OPDS);
+    end
+
+    wire [NUM_BANKS-1:0] fifo_push;
+    wire [NUM_BANKS-1:0] fifo_pop;
+    wire [NUM_BANKS-1:0][`NR_BITS-1:0] fifo_reg_num_in, fifo_reg_num_out;
+    wire [NUM_BANKS-1:0] fifo_empty;
+
+    for (genvar b = 0; b < NUM_BANKS; ++b) begin : gen_fifos
+        assign fifo_push[b] = transfer_granted[b];
+        assign fifo_reg_num_in[b] = b + (transfer_bank_counters[b] * NUM_BANKS);
+
+        VX_fifo_queue #(
+            .DATAW    (`NR_BITS),
+            .DEPTH    (2),
+            .OUT_REG  (0)
+        ) transfer_fifo (
+            .clk      (clk),
+            .reset    (reset),
+            .push     (fifo_push[b]),
+            .pop      (fifo_pop[b]),
+            .data_in  (fifo_reg_num_in[b]),
+            .data_out (fifo_reg_num_out[b]),
+            .empty    (fifo_empty[b]),
+            .full     (),
+            .alm_full ()
+        );
+
+        always @(posedge clk) begin
+            if (reset) begin
+                transfer_bank_counters[b] <= 0;
+            end else if (transfer_active && transfer_granted[b]) begin
+                transfer_bank_counters[b] <= transfer_bank_counters[b] + 1;
+            end
+        end
+    end
+
+    // Transfer state machine
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            transfer_active <= 0;
+            for (integer b = 0; b < NUM_BANKS; b++) begin
+                transfer_bank_counters[b] <= 0;
+            end
+        end else begin
+            if (scalar_dispatch && !transfer_active) begin
+                transfer_active <= 1;
+                transfer_warp_id <= scalar_warp_id;
+                transfer_thread_mask <= scalar_thread_mask;
+                for (integer b = 0; b < NUM_BANKS; b++) begin
+                    transfer_bank_counters[b] <= 0;
+                end
+            end
+        end
+    end
+
+    // Transfer output logic
+    reg transfer_out_valid_r;
+    reg [`CLOG2(THREADS_PER_WARP)-1:0] transfer_out_thread_id_r;
+    reg [`NR_BITS-1:0] transfer_out_register_id_r;
+    reg [`XLEN-1:0] transfer_out_value_r;
+    reg transfer_complete_r;
+
+    reg [`CLOG2(THREADS_PER_WARP)-1:0] thread_idx [NUM_BANKS-1:0]; // Track thread per bank
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            transfer_out_valid_r <= 0;
+            transfer_complete_r <= 0;
+            for (integer b = 0; b < NUM_BANKS; b++) begin
+                thread_idx[b] <= 0;
+            end
+        end else begin
+            transfer_out_valid_r <= 0;
+            transfer_complete_r <= 0;
+
+            for (integer b = 0; b < NUM_BANKS; b++) begin
+                if (gpr_rd_valid_st2[b] && gpr_rd_req_idx_st2[b] >= NUM_SRC_OPDS && !fifo_empty[b]) begin
+                    while (thread_idx[b] < THREADS_PER_WARP) begin
+                        if (transfer_thread_mask[thread_idx[b]]) begin
+                            transfer_out_valid_r <= 1;
+                            transfer_out_thread_id_r <= thread_idx[b];
+                            transfer_out_register_id_r <= fifo_reg_num_out[b];
+                            transfer_out_value_r <= gpr_rd_data_st2[b][thread_idx[b] * `XLEN +: `XLEN];
+                            thread_idx[b] <= thread_idx[b] + 1;
+                            break;
+                        end
+                        thread_idx[b] <= thread_idx[b] + 1;
+                    end
+                    if (thread_idx[b] == THREADS_PER_WARP) begin
+                        fifo_pop[b] <= 1;
+                        thread_idx[b] <= 0;
+                    end
+                end else begin
+                    fifo_pop[b] <= 0;
+                end
+            end
+
+            // Check completion
+            if (transfer_active) begin
+                reg all_banks_done = 1;
+                for (integer b = 0; b < NUM_BANKS; b++) begin
+                    if (transfer_bank_counters[b] < REG_PER_BANK) begin
+                        all_banks_done = 0;
+                    end
+                end
+                if (all_banks_done) begin
+                    transfer_complete_r <= 1;
+                    transfer_active <= 0;
+                end
+            end
+        end
+    end
+
+    assign transfer_out_valid = transfer_out_valid_r;
+    assign transfer_out_thread_id = transfer_out_thread_id_r;
+    assign transfer_out_register_id = transfer_out_register_id_r;
+    assign transfer_out_value = transfer_out_value_r;
+    assign transfer_complete = transfer_complete_r;
+
+    // Original operand processing
     always @(*) begin
         src_data_m_st2 = src_data_st2;
         for (integer b = 0; b < NUM_BANKS; ++b) begin
-            if (gpr_rd_valid_st2[b]) begin
+            if (gpr_rd_valid_st2[b] && gpr_rd_req_idx_st2[b] < NUM_SRC_OPDS) begin
                 src_data_m_st2[gpr_rd_req_idx_st2[b]] = gpr_rd_data_st2[b];
             end
         end
@@ -234,6 +391,7 @@ module VX_operands import VX_gpu_pkg::*; #(
         .ready_out (operands_if.ready)
     );
 
+    // Writeback logic
     wire [PER_BANK_ADDRW-1:0] gpr_wr_addr;
     if (ISSUE_WIS != 0) begin : g_gpr_wr_addr
         assign gpr_wr_addr = {writeback_if.data.rd[`NR_BITS-1:BANK_SEL_BITS], writeback_if.data.wis};
@@ -295,5 +453,48 @@ module VX_operands import VX_gpu_pkg::*; #(
     end
     assign perf_stalls = collisions_r;
 `endif
+
+    /*
+    // Alternative: Transfer all threads' values per register in one cycle
+    // Uncomment and adjust scalar core interface if preferred
+    output wire [THREADS_PER_WARP-1:0][`XLEN-1:0] transfer_out_values;
+
+    reg [THREADS_PER_WARP-1:0][`XLEN-1:0] transfer_out_values_r;
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            transfer_out_valid_r <= 0;
+            transfer_complete_r <= 0;
+        end else begin
+            transfer_out_valid_r <= 0;
+            transfer_complete_r <= 0;
+
+            for (integer b = 0; b < NUM_BANKS; b++) begin
+                if (gpr_rd_valid_st2[b] && gpr_rd_req_idx_st2[b] >= NUM_SRC_OPDS && !fifo_empty[b]) begin
+                    transfer_out_valid_r <= 1;
+                    transfer_out_register_id_r <= fifo_reg_num_out[b];
+                    transfer_out_values_r <= gpr_rd_data_st2[b];
+                    fifo_pop[b] <= 1;
+                end else begin
+                    fifo_pop[b] <= 0;
+                end
+            end
+
+            if (transfer_active) begin
+                reg all_banks_done = 1;
+                for (integer b = 0; b < NUM_BANKS; b++) begin
+                    if (transfer_bank_counters[b] < REG_PER_BANK) begin
+                        all_banks_done = 0;
+                    end
+                end
+                if (all_banks_done) begin
+                    transfer_complete_r <= 1;
+                    transfer_active <= 0;
+                end
+            end
+        end
+    end
+    assign transfer_out_values = transfer_out_values_r;
+    */
 
 endmodule
