@@ -2,3 +2,7 @@
 /.vscode
 *.cache
 *.code-workspace
+tools/riscv32-gnu-toolchain/
+tools/riscv64-gnu-toolchain/
+tools/llvm-vortex/lib/libclang-cpp.so.*
+tools/verilator/share/verilator/bin/verilator_bin_dbg
