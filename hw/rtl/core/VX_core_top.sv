@@ -145,7 +145,9 @@ module VX_core_top import VX_gpu_pkg::*; #(
 
     VX_core #(
         .INSTANCE_ID (`SFORMATF(("core"))),
-        .CORE_ID (CORE_ID)
+        .CORE_ID (CORE_ID), 
+        .NUM_THREADS(NUM_THREADS),
+        .NUM_WARPS(NUM_WARPS)
     ) core (
         `SCOPE_IO_BIND (0)
         .clk            (clk),
