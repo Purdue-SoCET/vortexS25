@@ -16,7 +16,8 @@
 module VX_issue_slice import VX_gpu_pkg::*; #(
     parameter `STRING INSTANCE_ID = "",
     parameter ISSUE_ID = 0,
-    parameter NUM_THREADS = 4
+    parameter NUM_THREADS = 4, 
+    parameter NUM_WARPS = 2
 ) (
     `SCOPE_IO_DECL
 
@@ -79,10 +80,13 @@ module VX_issue_slice import VX_gpu_pkg::*; #(
         .operands_if    (operands_if)
     );
 
+    localparam string DISPATCH_INSTANCE_ID = $sformatf("%s-dispatch", INSTANCE_ID);
+
+
     VX_dispatch #(
-        .INSTANCE_ID (`SFORMATF(("%s-dispatch", INSTANCE_ID)), 
+        .INSTANCE_ID(DISPATCH_INSTANCE_ID), 
         .NUM_THREADS(NUM_THREADS), ///CHANGED -- ARMAAN 
-        .NUM_WARPS(NUM_WARPS))
+        .NUM_WARPS(NUM_WARPS)
     ) dispatch (
         .clk            (clk),
         .reset          (reset),

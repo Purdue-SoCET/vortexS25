@@ -30,6 +30,11 @@ module VX_lsu_unit import VX_gpu_pkg::*; #(
 );
     localparam BLOCK_SIZE = `NUM_LSU_BLOCKS;
     localparam NUM_LANES  = `NUM_LSU_LANES;
+    localparam int NUM_THREADS = `NUM_THREADS;
+    localparam int NUM_WARPS   = `NUM_WARPS;
+
+
+
 
     `SCOPE_IO_SWITCH (BLOCK_SIZE);
 
