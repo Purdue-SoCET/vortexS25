@@ -41,9 +41,41 @@ SRCS += $(SRC_DIR)/processor.cpp
 
 TOP = rtlsim_shim
 
+#VL_FLAGS = --exe
+#VL_FLAGS += --language 1800-2009 --assert -Wall -Wpedantic
+#VL_FLAGS += -Wno-DECLFILENAME -Wno-REDEFMACRO
+#VL_FLAGS += --x-initial unique --x-assign unique
+#VL_FLAGS += verilator.vlt
+#VL_FLAGS += -DSIMULATION -DSV_DPI
+#VL_FLAGS += -DXLEN_$(XLEN)
+#VL_FLAGS += $(CONFIGS)
+#VL_FLAGS += $(RTL_INCLUDE)
+#VL_FLAGS += $(RTL_PKGS)
+#VL_FLAGS += --cc $(TOP) --top-module $(TOP)
+
+#VL_FLAGS = --exe
+#VL_FLAGS += --language 1800-2009 --assert -Wall -Wpedantic
+#VL_FLAGS += -Wno-DECLFILENAME -Wno-REDEFMACRO
+#VL_FLAGS += --Wno-UNUSEDPARAM --Wno-fatal --error-limit 0
+#VL_FLAGS += -Wno-UNUSEDPARAM -Wno-fatal --error-limit 0
+#VL_FLAGS += -Wno-UNUSEDPARAM -Wno-fatal --no-fatal --error-limit 0
+#VL_FLAGS += -Wno-UNUSEDPARAM -Wno-fatal --error-limit 0 --no-warnings-fatal
+#VL_FLAGS += -Wno-UNUSEDPARAM -Wno-fatal --error-limit 0
+#VL_FLAGS += --x-initial unique --x-assign unique
+#VL_FLAGS += verilator.vlt
+#VL_FLAGS += -DSIMULATION -DSV_DPI
+#VL_FLAGS += -DXLEN_$(XLEN)
+#VL_FLAGS += $(CONFIGS)
+#VL_FLAGS += $(RTL_INCLUDE)
+#VL_FLAGS += $(RTL_PKGS)
+#VL_FLAGS += --cc $(TOP) --top-module $(TOP)
+#VL_FLAGS += --language 1800-2012
+
 VL_FLAGS = --exe
 VL_FLAGS += --language 1800-2009 --assert -Wall -Wpedantic
-VL_FLAGS += -Wno-DECLFILENAME -Wno-REDEFMACRO
+VL_FLAGS += -Wno-UNUSEDPARAM
+VL_FLAGS += --no-warnings-fatal
+VL_FLAGS += --error-limit 0
 VL_FLAGS += --x-initial unique --x-assign unique
 VL_FLAGS += verilator.vlt
 VL_FLAGS += -DSIMULATION -DSV_DPI
@@ -52,6 +84,8 @@ VL_FLAGS += $(CONFIGS)
 VL_FLAGS += $(RTL_INCLUDE)
 VL_FLAGS += $(RTL_PKGS)
 VL_FLAGS += --cc $(TOP) --top-module $(TOP)
+
+
 
 CXXFLAGS += $(CONFIGS)
 

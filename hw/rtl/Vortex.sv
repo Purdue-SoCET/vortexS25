@@ -131,6 +131,9 @@ module Vortex import VX_gpu_pkg::*; (
 
     wire [`NUM_CLUSTERS-1:0] per_cluster_busy;
 
+localparam int NUM_THREADS = `NUM_THREADS;
+localparam int NUM_WARPS   = `NUM_WARPS;
+
     // Generate all clusters
     for (genvar cluster_id = 0; cluster_id < `NUM_CLUSTERS; ++cluster_id) begin : g_clusters
 
@@ -138,6 +141,7 @@ module Vortex import VX_gpu_pkg::*; (
 
         VX_dcr_bus_if cluster_dcr_bus_if();
         `BUFFER_DCR_BUS_IF (cluster_dcr_bus_if, dcr_bus_if, 1'b1, (`NUM_CLUSTERS > 1))
+
 
         VX_cluster #(
             .CLUSTER_ID (cluster_id),

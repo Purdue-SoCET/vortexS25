@@ -17,7 +17,7 @@ CXXFLAGS += $(CONFIGS)
 LDFLAGS += -shared -pthread
 LDFLAGS += -L$(DESTDIR) -lrtlsim
 
-SRCS := $(SRC_DIR)/vortex.cpp
+SRCS := vortex.cpp
 
 # Debugging
 ifdef DEBUG
