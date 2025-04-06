@@ -51,8 +51,12 @@ module VX_execute import VX_gpu_pkg::*; #(
     VX_fpu_csr_if fpu_csr_if[`NUM_FPU_BLOCKS]();
 `endif
 
+    localparam string ALU_INSTANCE_ID = `SFORMATF("%s-alu", INSTANCE_ID); //zohaib testing 
+    
     VX_alu_unit #(
-        .INSTANCE_ID (`SFORMATF(("%s-alu", INSTANCE_ID)), .NUM_THREADS(NUM_THREADS), .NUM_WARPS(NUM_WARPS))
+       .INSTANCE_ID (ALU_INSTANCE_ID),
+        .NUM_THREADS(NUM_THREADS),
+        .NUM_WARPS(NUM_WARPS))
     ) alu_unit (
         .clk            (clk),
         .reset          (reset),
