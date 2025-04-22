@@ -103,7 +103,7 @@ static void __attribute__ ((noinline)) process_threads_stub() {
 static void __attribute__ ((noinline)) process_thread_groups() {
   wspawn_groups_args_t* targs = (wspawn_groups_args_t*)csr_read(VX_CSR_MSCRATCH);
 
-  uint32_t threads_per_warp = vx_num_threads();
+  uint32_t threads_per_warp = vx_num_threads(); //this should now come from paramentrixed values 
   uint32_t warp_id = vx_warp_id();
   uint32_t thread_id = vx_thread_id();
 
@@ -154,11 +154,22 @@ static void __attribute__ ((noinline)) process_thread_groups_stub() {
   vx_tmc(0 == vx_warp_id());
 }
 
+//check w num_warps function
+uint32_t warps_per_core = (user_warps_override > 0) ? user_warps_override : vx_num_warps();
+uint32_t threads_per_warp = (user_threads_override > 0) ? user_threads_override : vx_num_threads();
+
 int vx_spawn_threads(uint32_t dimension,
                      const uint32_t* grid_dim,
-                     const uint32_t * block_dim,
+                     const uint32_t* block_dim,
                      vx_kernel_func_cb kernel_func,
-                     const void* arg) {
+                     const void* arg,
+                     uint32_t user_warps_override,    // if 0, use vx_num_warps()
+                     uint32_t user_threads_override); // if 0, use vx_num_threads()
+// int vx_spawn_threads(uint32_t dimension,
+//                      const uint32_t* grid_dim,
+//                      const uint32_t * block_dim,
+//                      vx_kernel_func_cb kernel_func,
+//                      const void* arg) {
   // calculate number of groups and group size
   uint32_t num_groups = 1;
   uint32_t group_size = 1;
