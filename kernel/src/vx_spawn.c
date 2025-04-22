@@ -108,7 +108,7 @@ static void __attribute__ ((noinline)) process_thread_groups() {
   uint32_t thread_id = vx_thread_id();
 
   uint32_t warps_per_group = targs->warps_per_group;
-  uint32_t groups_per_core = targs->groups_per_core;
+  // uint32_t groups_per_core = targs->groups_per_core;  //declaration updated below 
 
   uint32_t iterations = targs->warp_batches + (warp_id < targs->remaining_warps);
 
@@ -184,7 +184,7 @@ int vx_spawn_threads(uint32_t dimension,
 
   // device specifications
   uint32_t num_cores = vx_num_cores();
-  uint32_t warps_per_core = vx_num_warps();
+  // uint32_t warps_per_core = vx_num_warps(); definition updated below 
   uint32_t threads_per_warp = vx_num_threads();
   uint32_t core_id = vx_core_id();
 
