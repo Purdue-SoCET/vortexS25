@@ -154,7 +154,7 @@ static void __attribute__ ((noinline)) process_thread_groups_stub() {
   vx_tmc(0 == vx_warp_id());
 }
 
-//check w num_warps function
+//check w num_warps function, currently from intrinsic.h ? 
 uint32_t warps_per_core = (user_warps_override > 0) ? user_warps_override : vx_num_warps();
 uint32_t threads_per_warp = (user_threads_override > 0) ? user_threads_override : vx_num_threads();
 
