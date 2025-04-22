@@ -163,8 +163,10 @@ int vx_spawn_threads(uint32_t dimension,
                      const uint32_t* block_dim,
                      vx_kernel_func_cb kernel_func,
                      const void* arg,
-                     uint32_t user_warps_override,    // if 0, use vx_num_warps()
-                     uint32_t user_threads_override); // if 0, use vx_num_threads()
+                     uint32_t num_cores,
+                     uint32_t user_warps_override,
+                     uint32_t user_threads_override)
+
 // int vx_spawn_threads(uint32_t dimension,
 //                      const uint32_t* grid_dim,
 //                      const uint32_t * block_dim,
@@ -173,6 +175,12 @@ int vx_spawn_threads(uint32_t dimension,
   // calculate number of groups and group size
   uint32_t num_groups = 1;
   uint32_t group_size = 1;
+ // uint32_t core_id = vx_core_id();
+  unit32_t num_cores = vx_num_cores();
+user_warps_override     = (num_cores * 3) % 8 + 1;  // [1, 8]
+    user_threads_override   = ((num_cores + 2) * 4) % 64 + 4;  // [4, 67]
+    // binary power?  value
+    user_threads_override   = (user_threads_override / 4) * 4;
   for (uint32_t i = 0; i < 3; ++i) {
     uint32_t gd = (grid_dim && (i < dimension)) ? grid_dim[i] : 1;
     uint32_t bd = (block_dim && (i < dimension)) ? block_dim[i] : 1;
